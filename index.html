@@ -2,12 +2,90 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue + TS</title>
+    <title>Vue 3 Posts App</title>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      .app {
+        padding: 20px;
+        max-width: 500px;
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      createApp({
+        setup() {
+          const posts = ref([]);
+          const successMessage = ref("");
+          const form = ref({ title: "", body: "" });
+
+          async function loadPosts() {
+            const res = await fetch("https://jsonplaceholder.typicode.com/posts");
+            posts.value = await res.json();
+          }
+
+          async function createPost() {
+            const res = await fetch("https://jsonplaceholder.typicode.com/posts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(form.value)
+            });
+
+            const newPost = await res.json();
+            successMessage.value = "Пост успешно создан!";
+
+            posts.value.unshift(newPost);
+            form.value.title = "";
+            form.value.body = "";
+          }
+
+          return { posts, form, successMessage, loadPosts, createPost };
+        }
+      }).mount("#app");
+    </script>
+
+    <div class="app">
+      <h2>Посты</h2>
+
+      <button @click="loadPosts">Загрузить посты</button>
+
+      <ul v-if="posts.length">
+        <li v-for="post in posts" :key="post.id">
+          {{ post.title }}
+        </li>
+      </ul>
+
+      <hr />
+
+      <h2>Создать новый пост</h2>
+
+      <form @submit.prevent="createPost">
+        <div>
+          <label>Заголовок:</label><br />
+          <input v-model="form.title" required />
+        </div>
+
+        <div style="margin-top: 10px;">
+          <label>Текст:</label><br />
+          <textarea v-model="form.body" required></textarea>
+        </div>
+
+        <button style="margin-top: 10px;" type="submit">Отправить</button>
+      </form>
+
+      <p v-if="successMessage" style="color: green; margin-top: 10px;">
+        {{ successMessage }}
+      </p>
+    </div>
   </body>
 </html>
